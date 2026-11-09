@@ -14,6 +14,10 @@ from textual.widgets import Button, DataTable, Label, ProgressBar, Select, Stati
 
 from src.utils.confirm_dialog import ConfirmDialog
 from src.utils.config import config
+from src.utils.gamification import (
+    TODO_COMPLETION_BASE_EXP,
+    TODO_PRIORITY_MULTIPLIER,
+)
 from src.utils.logger import Logger
 from src.utils.seasonal_theme import HALLOWEEN_THEME
 from src.utils.todo_dialog import TodoDraft, TodoEditorDialog
@@ -84,7 +88,12 @@ class Todos(Static):
                     classes="icon-button",
                 )
                 yield Select(
-                    (("Manual order", "manual"), ("Created time", "created"), ("Priority", "priority")),
+                    (
+                        ("Manual order", "manual"),
+                        ("Created time", "created"),
+                        ("Priority", "priority"),
+                        ("Status", "status"),
+                    ),
                     value="manual",
                     allow_blank=False,
                     id="todos-sort",
@@ -146,11 +155,12 @@ class Todos(Static):
                 created = datetime.fromisoformat(item.created_at).astimezone().strftime("%Y-%m-%d %H:%M")
             except ValueError:
                 created = item.created_at
+            cells = [Text(task_label), Text(status), priority_text, Text(created)]
+            if item.completed:
+                for cell in cells:
+                    cell.stylize("dim")
             table.add_row(
-                task_label,
-                status,
-                priority_text,
-                created,
+                *cells,
                 height=2 if item.description else 1,
                 key=item.id,
             )
@@ -182,7 +192,7 @@ class Todos(Static):
 
     @on(Select.Changed, "#todos-sort")
     def on_sort_changed(self, event: Select.Changed) -> None:
-        if event.value in {"manual", "created", "priority"}:
+        if event.value in {"manual", "created", "priority", "status"}:
             self.sort_mode = event.value
             self.refresh_table()
 
@@ -262,7 +272,13 @@ class Todos(Static):
 
         detail = " (including its sub-items)" if item.parent_id is None else ""
         state = "completed" if completed else "reopened"
-        self.commit_change(f"TODO item '{item.title}' {state}{detail}.", toggle)
+        changed = self.commit_change(f"TODO item '{item.title}' {state}{detail}.", toggle)
+        if changed and completed:
+            award_experience = getattr(self.app, "award_experience", None)
+            if callable(award_experience):
+                award_experience(
+                    TODO_COMPLETION_BASE_EXP * TODO_PRIORITY_MULTIPLIER[item.priority]
+                )
 
     def action_toggle_paused(self) -> None:
         item = self.selected_item()
