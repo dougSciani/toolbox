@@ -801,3 +801,17 @@ HealthCheckConfigDialog {
 #health-config-buttons Button {
     margin-left: 1;
 }
+
+#settings-button-export {
+    height: 3;
+    align: right middle;
+    margin-top: 1;
+    padding-left: 1;
+}
+
+#settings-button-import {
+    height: 3;
+    align: left middle;
+    margin-top: 1;
+    padding-left: 1;
+}

@@ -39,8 +39,14 @@ class Settings(Static):
     def compose(self) -> ComposeResult:
         """Create the layout for the settings view."""
         with VerticalScroll():
-            yield Label("Settings", id="settings-title")
-            yield Label("Configure your theme, paths, logs, and services.", id="settings-subtitle")
+            with Horizontal():
+                with Vertical(id="settings-header"):
+                    yield Label("Settings", id="settings-title")
+                    yield Label("Configure your theme, paths, logs, and services.", id="settings-subtitle")
+                with Vertical(id="settings-button-export"):
+                    yield Button("Export", variant="primary", id="settings-Export")
+                with Vertical(id="settings-button-import"):
+                    yield Button("Import", variant="primary", id="settings-Import")
             with Horizontal(id="settings-columns"):
                 with Vertical(id="settings-left-column"):
                     yield from self.build_path_settings()
